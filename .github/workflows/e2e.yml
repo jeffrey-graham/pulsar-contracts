@@ -1,0 +1,31 @@
+name: Frontend E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    name: Playwright E2E (Critical Frontend Flows)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies and Playwright
+        run: |
+          npm install
+          npm install --no-save @playwright/test@^1.48.0
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E suite
+        run: npx playwright test
