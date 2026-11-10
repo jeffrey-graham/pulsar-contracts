@@ -359,6 +359,113 @@ fn test_t003_filter_by_token() {
     assert_eq!(page.records.get(0).unwrap().token, token_b);
 }
 
+/// Filtering by multiple tokens (`tokens: Some(Vec<Address>)`) returns all payments
+/// whose token is in the list and excludes tokens not in the list.
+#[rustfmt::skip]
+#[test]
+fn test_t003_filter_by_multiple_tokens() {
+    let (env, client) = setup();
+    let admin = Address::generate(&env);
+    let merchant = Address::generate(&env);
+    let payer = Address::generate(&env);
+    let token_usdc = create_token(&env, &admin);
+    let token_eurc = create_token(&env, &admin);
+    let token_xlm = create_token(&env, &admin);
+
+    client.set_admin(&admin_vec(&env, &admin), &1);
+    client.register_merchant(
+        &merchant,
+        &s(&env, "Multi-Token Store"),
+        &s(&env, "desc"),
+        &s(&env, "c@c.com"),
+        &MerchantCategory::Retail,
+        &None,
+    );
+    mint(&env, &token_usdc, &payer, 5_000);
+    mint(&env, &token_eurc, &payer, 5_000);
+    mint(&env, &token_xlm, &payer, 5_000);
+
+    for (idx, (tok, amt)) in [
+        (token_usdc.clone(), 100i128),
+        (token_eurc.clone(), 200i128),
+        (token_xlm.clone(), 300i128),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let order_id = match idx {
+            0 => b(&env, "MTOK_USDC"),
+            1 => b(&env, "MTOK_EURC"),
+            _ => b(&env, "MTOK_XLM"),
+        };
+        let order = PaymentOrder {
+            order_id,
+            merchant_address: merchant.clone(),
+            payer: payer.clone(),
+            token: tok.clone(),
+            amount: *amt,
+            description: s(&env, "d"),
+            expires_at: 0,
+            metadata: None,
+        };
+        let (_pk, sig) = sign_order(&env, &order);
+        client.process_payment_with_signature(&payer, &order, &sig, &zero_key(&env));
+    }
+
+    // Filter for stablecoins (USDC + EURC) in a single query
+    let multi_filter = PaymentFilter {
+        date_start: None,
+        date_end: None,
+        amount_min: None,
+        amount_max: None,
+        tokens: Some(Vec::from_array(&env, [token_usdc.clone(), token_eurc.clone()])),
+        status: StatusFilter::Any,
+    };
+    let page = client.get_payer_payment_history(
+        &payer,
+        &None,
+        &10,
+        &Some(multi_filter.clone()),
+        &SortField::Amount,
+        &SortOrder::Ascending,
+    );
+    assert_eq!(page.total, 2);
+    assert_eq!(page.records.get(0).unwrap().token, token_usdc);
+    assert_eq!(page.records.get(1).unwrap().token, token_eurc);
+
+    // Merchant payment history also matches multiple tokens
+    let merchant_page = client.get_payment_history_by_merchant(
+        &merchant,
+        &None,
+        &10,
+        &Some(multi_filter),
+        &SortField::Amount,
+        &SortOrder::Ascending,
+    );
+    assert_eq!(merchant_page.total, 2);
+    assert_eq!(merchant_page.records.get(0).unwrap().token, token_usdc);
+    assert_eq!(merchant_page.records.get(1).unwrap().token, token_eurc);
+
+    // Empty tokens vector is treated as no token filter (matches all 3)
+    let empty_tokens_filter = PaymentFilter {
+        date_start: None,
+        date_end: None,
+        amount_min: None,
+        amount_max: None,
+        tokens: Some(Vec::new(&env)),
+        status: StatusFilter::Any,
+    };
+    let all_page = client.get_payer_payment_history(
+        &payer,
+        &None,
+        &10,
+        &Some(empty_tokens_filter),
+        &SortField::Amount,
+        &SortOrder::Ascending,
+    );
+    assert_eq!(all_page.total, 3);
+}
+
 // ── 2d. Filter: status ────────────────────────────────────────────────────────
 
 /// Filtering by `StatusFilter::Completed` returns only payments with no refund.

@@ -39,7 +39,7 @@ Every paginated endpoint must accept the following query parameters:
 | `date_end` | Unix timestamp (u64) | Upper bound on `paid_at` |
 | `amount_min` | integer (i128) | Minimum payment amount |
 | `amount_max` | integer (i128) | Maximum payment amount |
-| `token` | address string | Filter by token contract address |
+| `tokens` | array of address strings | Filter by one or more token contract addresses |
 | `status` | `any` \| `completed` \| `partially_refunded` \| `fully_refunded` | Payment status filter |
 | `sort_field` | `date` \| `amount` | Field to sort by (default: `date`) |
 | `sort_order` | `asc` \| `desc` | Sort direction (default: `desc`) |

@@ -27,6 +27,7 @@ export interface PaymentFilter {
   date_end?: number;
   amount_min?: number;
   amount_max?: number;
+  tokens?: string[];
   status?: "Any" | "Completed" | "PartiallyRefunded" | "FullyRefunded";
 }
 

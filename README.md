@@ -521,7 +521,7 @@ stellar contract invoke --id $CONTRACT_ID --source-account <PAYER_KEY> --network
 | `date_end` | `u64` | Unix timestamp upper bound |
 | `amount_min` | `i128` | Minimum payment amount |
 | `amount_max` | `i128` | Maximum payment amount |
-| `token` | `Address` | Filter by token contract |
+| `tokens` | `Vec<Address>` | Filter by one or more token contract addresses (`null` or empty matches all) |
 | `status` | `StatusFilter` | `Any` \| `Completed` \| `PartiallyRefunded` \| `FullyRefunded` |
 
 **Sort fields**: `Date` | `Amount`  
