@@ -6,4 +6,6 @@
  */
 export { CheckoutWidget } from "./CheckoutWidget";
 export type { CheckoutWidgetProps } from "./CheckoutWidget";
+export { TransactionConfirmationModal } from "./TransactionConfirmationModal";
+export type { TransactionConfirmationModalProps } from "./TransactionConfirmationModal";
 export { Spinner, ErrorMessage, SuccessBanner } from "./ContractCallStatus";

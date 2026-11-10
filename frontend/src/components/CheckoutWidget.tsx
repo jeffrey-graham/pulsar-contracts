@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useContractCall } from "../hooks/useContractCall";
 import { Spinner, ErrorMessage, SuccessBanner } from "./ContractCallStatus";
+import { TransactionConfirmationModal } from "./TransactionConfirmationModal";
 
 export interface CheckoutWidgetProps {
   /** Merchant-assigned order identifier. */
@@ -11,6 +12,10 @@ export interface CheckoutWidgetProps {
   token: string;
   /** Merchant's Stellar public key. */
   merchantAddress: string;
+  /** Transaction type ("Payment" or "Refund", defaults to "Payment"). */
+  transactionType?: "Payment" | "Refund";
+  /** Estimated network fee displayed on the confirmation screen. */
+  estimatedFee?: string;
   /** Called with the transaction hash on successful submission. */
   onSuccess?: (txHash: string) => void;
   /** Called with a human-readable error message on failure. */
@@ -41,10 +46,13 @@ export function CheckoutWidget({
   amount,
   token,
   merchantAddress,
+  transactionType = "Payment",
+  estimatedFee = "~0.01 XLM (100,000 stroops)",
   onSuccess,
   onError,
 }: CheckoutWidgetProps) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const { state, execute, reset } = useContractCall<null>();
 
   async function connectWallet() {
@@ -58,8 +66,18 @@ export function CheckoutWidget({
     setWalletAddress(address);
   }
 
-  async function handlePay() {
+  function handleRequestPay() {
     if (!walletAddress) return;
+    setShowConfirmation(true);
+  }
+
+  function handleCancelConfirmation() {
+    setShowConfirmation(false);
+  }
+
+  async function handleConfirmPay() {
+    if (!walletAddress) return;
+    setShowConfirmation(false);
 
     await execute(async () => {
       const freighter = (window as any).freighter;
@@ -145,16 +163,33 @@ export function CheckoutWidget({
                 Connected: <span className="font-mono">{walletAddress}</span>
               </p>
               <button
-                onClick={handlePay}
+                onClick={handleRequestPay}
                 disabled={state.status === "loading"}
                 className="w-full rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white py-2 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
-                {state.status === "loading" ? <Spinner label="Submitting…" /> : "Pay Now"}
+                {state.status === "loading"
+                  ? <Spinner label="Submitting…" />
+                  : transactionType === "Refund"
+                    ? "Initiate Refund"
+                    : "Pay Now"}
               </button>
             </div>
           )}
         </>
       )}
+
+      <TransactionConfirmationModal
+        isOpen={showConfirmation}
+        transactionType={transactionType}
+        amount={amount}
+        token={token}
+        recipient={merchantAddress}
+        orderId={orderId}
+        estimatedFee={estimatedFee}
+        isSubmitting={state.status === "loading"}
+        onConfirm={handleConfirmPay}
+        onCancel={handleCancelConfirmation}
+      />
 
       {state.status === "error" && (
         <button onClick={reset} className="text-xs text-[var(--color-text-muted)] underline">
