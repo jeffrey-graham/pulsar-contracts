@@ -1002,6 +1002,18 @@ all tracked deployments.
 
 ---
 
+## Roadmap
+
+Planned features, priorities, and release milestones (`v0.1` Current, `v0.2` Bug Fixes & DX, and `v1.0` Production-Ready) are tracked in [ROADMAP.md](ROADMAP.md).
+
+| Milestone | Theme | Status |
+|---|---|---|
+| [v0.1 — Current](ROADMAP.md#v01--current-shipped) | Core payment infrastructure on Soroban Stellar | Shipped |
+| [v0.2 — Bug Fixes & DX](ROADMAP.md#v02--bug-fixes--dx) | Stability, developer experience, and off-chain tooling | In Progress |
+| [v1.0 — Production-Ready](ROADMAP.md#v10--production-ready) | Security audit, performance, and ecosystem readiness | Planned |
+
+---
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
