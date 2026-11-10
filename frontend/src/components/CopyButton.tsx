@@ -15,18 +15,20 @@ interface CopyButtonProps {
  * Shows a success state after copying and a fallback for unsupported browsers.
  */
 export function CopyButton({ text, label = "Copy", className = "" }: CopyButtonProps) {
-  const { copy, status } = useCopyToClipboard();
+  const { copy, status, errorMessage } = useCopyToClipboard();
+  const tooltipId = React.useId();
 
   const isCopied = status === "copied";
   const isError = status === "error";
 
   return (
-    <>
+    <span className="copy-button-wrapper" style={{ position: "relative", display: "inline-flex" }}>
       <button
         type="button"
         onClick={() => copy(text)}
         aria-label={isCopied ? "Copied!" : isError ? "Copy failed" : label}
-        title={isCopied ? "Copied!" : isError ? "Copy failed" : label}
+        aria-describedby={isError ? tooltipId : undefined}
+        title={isCopied ? "Copied!" : isError ? errorMessage ?? "Copy failed" : label}
         className={`copy-button copy-button--${status} ${className}`.trim()}
       >
         {isCopied ? (
@@ -77,10 +79,20 @@ export function CopyButton({ text, label = "Copy", className = "" }: CopyButtonP
         <span className="copy-button__label">{isCopied ? "Copied!" : isError ? "Failed" : label}</span>
       </button>
 
+      {isError && (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="copy-button__tooltip copy-button__tooltip--error"
+        >
+          {errorMessage ?? "Copy failed — clipboard unavailable"}
+        </span>
+      )}
+
       {/* Live region so screen readers announce the copy result */}
       <span role="status" aria-live="polite" className="sr-only">
         {isCopied ? "Copied to clipboard" : isError ? "Copy failed" : ""}
       </span>
-    </>
+    </span>
   );
 }

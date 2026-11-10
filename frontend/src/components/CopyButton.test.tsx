@@ -38,8 +38,8 @@ test("shows 'Copied!' and live region after successful copy", async () => {
   expect(screen.getByRole("status")).toHaveTextContent("Copied to clipboard");
 });
 
-test("shows error state when clipboard write fails", async () => {
-  mockWriteText.mockRejectedValue(new Error("denied"));
+test("shows error state and error tooltip when clipboard write fails", async () => {
+  mockWriteText.mockRejectedValue(new Error("Clipboard permission denied"));
   render(<CopyButton text="abc123" />);
 
   await act(async () => {
@@ -47,6 +47,7 @@ test("shows error state when clipboard write fails", async () => {
   });
 
   expect(screen.getByRole("button", { name: /copy failed/i })).toBeInTheDocument();
+  expect(screen.getByRole("tooltip")).toHaveTextContent("Clipboard permission denied");
 });
 
 test("resets to idle after resetDelay", async () => {
@@ -76,6 +77,44 @@ test("falls back to execCommand when clipboard API is absent", async () => {
 
   expect(execSpy).toHaveBeenCalledWith("copy");
   expect(screen.getByRole("button", { name: /copied/i })).toBeInTheDocument();
+  execSpy.mockRestore();
+});
+
+test("falls back to execCommand on non-secure origins (window.isSecureContext === false)", async () => {
+  const prevSecure = window.isSecureContext;
+  Object.defineProperty(window, "isSecureContext", {
+    value: false,
+    configurable: true,
+  });
+  const execSpy = jest.spyOn(document, "execCommand").mockReturnValue(true);
+
+  render(<CopyButton text="http-origin" />);
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button"));
+  });
+
+  expect(mockWriteText).not.toHaveBeenCalled();
+  expect(execSpy).toHaveBeenCalledWith("copy");
+  expect(screen.getByRole("button", { name: /copied/i })).toBeInTheDocument();
+
+  execSpy.mockRestore();
+  Object.defineProperty(window, "isSecureContext", {
+    value: prevSecure,
+    configurable: true,
+  });
+});
+
+test("shows error tooltip when neither Clipboard API nor execCommand is available", async () => {
+  Object.assign(navigator, { clipboard: undefined });
+  const execSpy = jest.spyOn(document, "execCommand").mockReturnValue(false);
+
+  render(<CopyButton text="unavailable" />);
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button"));
+  });
+
+  expect(screen.getByRole("button", { name: /copy failed/i })).toBeInTheDocument();
+  expect(screen.getByRole("tooltip")).toHaveTextContent(/Unable to copy to clipboard/i);
   execSpy.mockRestore();
 });
 

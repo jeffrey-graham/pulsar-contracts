@@ -29,6 +29,24 @@
   border-color: #dc2626;
 }
 
+.copy-button__tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.copy-button__tooltip--error {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
 /* Visually hide but keep accessible */
 .sr-only {
   position: absolute;
